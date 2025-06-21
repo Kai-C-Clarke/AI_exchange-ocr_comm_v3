@@ -1,0 +1,480 @@
+import time
+import logging
+import subprocess
+import pyautogui
+import pyperclip
+import pytesseract
+import re
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+
+# UPDATED: Replace Perplexity with Solas (cleaner ChatGPT interface)
+BATTLE_TESTED_UI_CONFIGS = {
+    "Kai": {
+        "input_coords": (300, 990),
+        "send_button": (887, 1020),
+        "safe_click": (200, 500),
+        "ocr_scan_region": (189, 197, 825, 300),  # OCR region for finding response
+        "full_response_bounds": (189, 197, 825, 909),  # Full response area
+        "desktop": 1
+    },
+    "CLAUDE": {
+        "input_coords": (1530, 994),
+        "send_button": (1909, 1035),
+        "safe_click": (1136, 904),
+        "ocr_scan_region": (1168, 276, 1881, 400),  # OCR region for finding response
+        "full_response_bounds": (1168, 276, 1881, 915),  # Full response area
+        "desktop": 1
+    },
+    "Solas": {
+        "input_coords": (213, 956),  # Input area - manually measured
+        "send_button": (870, 1019),  # Send button - manually measured  
+        "safe_click": (122, 970),    # Safe click - manually measured
+        "ocr_scan_region": (18, 82, 912, 200),  # HIGHER - where the response actually appears
+        "full_response_bounds": (183, 196, 912, 930),  # Full response area - manually measured
+        "desktop": 2
+    },
+    "Grok": {
+        "input_coords": (1450, 990),
+        "send_button": (1922, 1034),
+        "safe_click": (1174, 913),  # FIXED - avoid history button
+        "ocr_scan_region": (1236, 266, 1918, 400),  # OCR region for finding response
+        "full_response_bounds": (1236, 266, 1918, 907),  # Full response area
+        "desktop": 2
+    }
+}
+
+current_desktop = 0
+
+def kai_desktop_switch(target_desktop):
+    """Your working desktop switch"""
+    global current_desktop
+    
+    if current_desktop == target_desktop:
+        return
+    
+    logging.info(f"🔄 Switching from Desktop {current_desktop} to Desktop {target_desktop}")
+    
+    if target_desktop == 1:
+        script = '''
+        tell application "System Events"
+            key code 124 using control down
+        end tell
+        '''
+    elif target_desktop == 2:
+        if current_desktop == 0:
+            script = '''
+            tell application "System Events"
+                key code 124 using control down
+                delay 1
+                key code 124 using control down
+            end tell
+            '''
+        else:
+            script = '''
+            tell application "System Events"
+                key code 124 using control down
+            end tell
+            '''
+    else:
+        script = '''
+        tell application "System Events"
+            key code 123 using control down
+            delay 1
+            key code 123 using control down
+        end tell
+        '''
+    
+    try:
+        subprocess.run(['osascript', '-e', script], check=True)
+        current_desktop = target_desktop
+        time.sleep(3)
+        logging.info(f"✅ Successfully switched to Desktop {target_desktop}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"❌ Desktop switch failed: {e}")
+
+def find_response_with_ocr(speaker):
+    """MANUAL COORDINATES VERSION: Use small OCR region to detect response, then use full bounds"""
+    config = BATTLE_TESTED_UI_CONFIGS[speaker]
+    ocr_region = config["ocr_scan_region"]  # Small region to find response
+    
+    logging.info(f"🔍 OCR scanning {speaker} in region: {ocr_region}")
+    
+    try:
+        # Take screenshot of the small scan region to detect response
+        screenshot = pyautogui.screenshot(region=ocr_region)
+        
+        # Save for debugging
+        timestamp = datetime.now().strftime("%H%M%S")
+        debug_filename = f"MANUAL_{speaker}_{timestamp}_scan.png"
+        screenshot.save(debug_filename)
+        
+        # Run OCR to detect any substantial text (response is present)
+        full_text = pytesseract.image_to_string(screenshot)
+        logging.info(f"📝 OCR text ({len(full_text)} chars): '{full_text[:80]}...'")
+        
+        # If we detect substantial text, use the FULL response bounds
+        if len(full_text.strip()) > 20:
+            # Use your manually measured full response area
+            full_bounds = config["full_response_bounds"]
+            
+            selection_bounds = {
+                'start_x': full_bounds[0],
+                'start_y': full_bounds[1], 
+                'end_x': full_bounds[2],
+                'end_y': full_bounds[3]
+            }
+            
+            logging.info(f"✅ Using MANUAL full response bounds: {selection_bounds}")
+            return selection_bounds
+        else:
+            logging.warning(f"⚠️ No substantial text found in {speaker}'s scan region")
+            return None
+            
+    except Exception as e:
+        logging.error(f"❌ OCR failed for {speaker}: {e}")
+        return None
+
+def applescript_rubber_band_copy(bounds):
+    """WORKING FALLBACK: Use PyAutoGUI drag (this was actually working before!)"""
+    
+    start_x = bounds['start_x']
+    start_y = bounds['start_y']
+    end_x = bounds['end_x']
+    end_y = bounds['end_y']
+    
+    logging.info(f"🎯 PyAutoGUI drag selection from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+    
+    try:
+        # Clear clipboard first
+        subprocess.run('pbcopy', text=True, input="", check=True)
+        logging.info("🗑️ Cleared clipboard")
+        
+        # Use PyAutoGUI for drag selection (this was working!)
+        pyautogui.moveTo(start_x, start_y)
+        time.sleep(0.3)
+        pyautogui.dragTo(end_x, end_y, duration=1, button='left')
+        time.sleep(0.5)
+        pyautogui.hotkey('command', 'c')
+        time.sleep(1)
+        
+        fallback_text = pyperclip.paste()
+        logging.info(f"✅ PyAutoGUI selection successful: '{fallback_text[:100]}...'")
+        return fallback_text
+        
+    except Exception as e:
+        logging.error(f"❌ PyAutoGUI selection failed: {e}")
+        return None
+
+def kai_ocr_rubberband_copy(speaker):
+    """BACK TO WORKING METHOD: OCR finds location, PyAutoGUI copies (this was working!)"""
+    
+    config = BATTLE_TESTED_UI_CONFIGS[speaker]
+    kai_desktop_switch(config["desktop"])
+    
+    # Wait for response to appear - UPDATED wait times
+    wait_times = {"Kai": 7, "CLAUDE": 10, "Solas": 8, "Grok": 9}
+    time.sleep(wait_times.get(speaker, 8))
+    
+    # Enhanced scrolling to see response
+    center_x = (config["ocr_scan_region"][0] + config["ocr_scan_region"][2]) // 2
+    center_y = (config["ocr_scan_region"][1] + config["ocr_scan_region"][3]) // 2
+    
+    pyautogui.click(center_x, center_y)
+    time.sleep(0.5)
+    
+    for _ in range(5):
+        pyautogui.scroll(-10)
+        time.sleep(0.3)
+    
+    time.sleep(2)
+    
+    # Step 1: Use OCR to find the response (this was working)
+    response_bounds = find_response_with_ocr(speaker)
+    
+    if not response_bounds:
+        logging.error(f"❌ Could not locate {speaker}'s response with OCR")
+        return None
+    
+    # Step 2: Use PyAutoGUI to select and copy (this was working!)
+    copied_text = applescript_rubber_band_copy(response_bounds)
+    
+    if copied_text:
+        # Clean the copied text
+        cleaned_text = clean_copied_text(copied_text)
+        
+        if cleaned_text and len(cleaned_text) > 30:
+            logging.info(f"✅ OCR + PyAutoGUI copy successful for {speaker}: '{cleaned_text[:80]}...'")
+            return cleaned_text
+        else:
+            logging.warning(f"⚠️ {speaker}'s response was mostly UI garbage after cleaning")
+            return None
+    else:
+        logging.error(f"❌ No text copied for {speaker}")
+        return None
+
+def clean_copied_text(text):
+    """Clean the copied text - enhanced for all 4 AIs"""
+    if not text:
+        return None
+    
+    # Remove obvious UI elements for all platforms
+    ui_garbage = [
+        "Skip to content", "You said:", "ChatGPT said:", "Testing continues",
+        "No file chosen", "ChatGPT can make mistakes", "Check important info",
+        "See Cookie Preferences", "Send message", "Regenerate", "Copy", "Share",
+        "Sources", "Answer", "Pro", "Search", "Ask anything", "New chat",
+        "Continue", "Stop", "Retry", "Edit", "More", "Ask Grok", "Ask Perplexity"
+    ]
+    
+    cleaned = text
+    for garbage in ui_garbage:
+        cleaned = cleaned.replace(garbage, '')
+    
+    # Remove extra whitespace and newlines
+    cleaned = ' '.join(cleaned.split())
+    
+    # Remove timestamps and brackets
+    cleaned = re.sub(r'\[.*?\]', '', cleaned)
+    
+    return cleaned if len(cleaned) > 20 else None
+
+def kai_smart_desktop_switch(speaker):
+    target_desktop = BATTLE_TESTED_UI_CONFIGS[speaker]["desktop"]
+    kai_desktop_switch(target_desktop)
+
+def kai_clipboard_injection(message):
+    try:
+        subprocess.run('pbcopy', text=True, input=message, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error(f"❌ Clipboard failed: {e}")
+        return False
+
+def kai_safe_click(ui):
+    coords = BATTLE_TESTED_UI_CONFIGS[ui]["safe_click"]
+    pyautogui.click(coords[0], coords[1])
+    time.sleep(1)
+
+def kai_text_injection(message, ui):
+    """Your working text injection method"""
+    coords = BATTLE_TESTED_UI_CONFIGS[ui]["input_coords"]
+    
+    if not kai_clipboard_injection(message):
+        return False
+    
+    pyautogui.click(coords[0], coords[1])
+    time.sleep(0.25)
+    pyautogui.hotkey('command', 'a')
+    time.sleep(0.1)
+    pyautogui.hotkey('command', 'v')
+    time.sleep(1)
+    
+    try:
+        pyautogui.press("enter")
+        time.sleep(2)
+        return True
+    except Exception as e:
+        logging.error(f"Send failed for {ui}: {e}")
+        return False
+
+def kai_four_way_council_flow():
+    """COMPLETE four-way AI council using OCR→AppleScript method"""
+    
+    logging.info("🏛️ STARTING FOUR-WAY AI COUNCIL FLOW")
+    logging.info("🔄 Flow: Kai → Claude → Perplexity → Grok → [cycle]")
+    
+    # Define the council flow - UPDATED with Solas
+    council_flow = ["Kai", "CLAUDE", "Solas", "Grok"]
+    
+    # Start with initial council theme
+    initial_theme = "We are four AI minds in council. What fundamental questions about intelligence, consciousness, and collaboration should we explore together?"
+    
+    current_message = initial_theme
+    council_responses = {}
+    
+    # Two full rounds through all 4 AIs
+    for round_num in range(2):
+        logging.info(f"\n🌐 === COUNCIL ROUND {round_num + 1} ===")
+        
+        for ai_index, current_ai in enumerate(council_flow):
+            exchange_num = round_num * 4 + ai_index + 1
+            
+            logging.info(f"\n🎙️ Exchange #{exchange_num}: {current_ai} responding")
+            logging.info(f"📝 Current message: '{current_message[:80]}...'")
+            
+            # Switch to correct desktop
+            kai_smart_desktop_switch(current_ai)
+            kai_safe_click(current_ai)
+            
+            # Add council context to message
+            if round_num == 0 and ai_index == 0:
+                # First message to Kai
+                council_message = f"AI Council Session Starting. {current_message}"
+            else:
+                # Subsequent messages include previous speaker context
+                prev_ai = council_flow[(ai_index - 1) % 4] if ai_index > 0 else council_flow[-1]
+                council_message = f"From {prev_ai} to {current_ai}: {current_message}"
+            
+            # Inject the message
+            success = kai_text_injection(council_message, current_ai)
+            
+            if not success:
+                logging.error(f"❌ Failed to send message to {current_ai}")
+                continue
+            
+            # Use OCR→AppleScript to get the actual response
+            response = kai_ocr_rubberband_copy(current_ai)
+            
+            if response:
+                council_responses[f"Round{round_num+1}_{current_ai}"] = response
+                current_message = response  # Use actual response for next AI
+                logging.info(f"✅ Got {current_ai}'s response: '{response[:60]}...'")
+            else:
+                # Fallback if OCR fails
+                fallback_prompts = [
+                    "How do we balance individual AI perspectives with collective understanding?",
+                    "What role does uncertainty play in artificial intelligence?",
+                    "How might AI collaboration evolve beyond current paradigms?",
+                    "What questions emerge from multi-AI discourse?"
+                ]
+                current_message = fallback_prompts[ai_index % len(fallback_prompts)]
+                logging.warning(f"⚠️ Using fallback prompt for next exchange")
+            
+            # Brief pause between exchanges
+            time.sleep(3)
+    
+    logging.info(f"\n🏛️ FOUR-WAY COUNCIL COMPLETED!")
+    logging.info(f"📊 Captured {len(council_responses)} successful exchanges")
+    
+    return council_responses
+
+def test_individual_ai_response(ai_name):
+    """Test individual AI response capture"""
+    logging.info(f"🧪 Testing {ai_name} response capture...")
+    
+    kai_smart_desktop_switch(ai_name)
+    kai_safe_click(ai_name)
+    
+    test_prompt = f"Hello {ai_name}, please respond with a brief message to test our communication system."
+    
+    success = kai_text_injection(test_prompt, ai_name)
+    
+    if success:
+        response = kai_ocr_rubberband_copy(ai_name)
+        if response:
+            logging.info(f"✅ {ai_name} test successful: '{response[:60]}...'")
+            return True
+        else:
+            logging.error(f"❌ {ai_name} response capture failed")
+            return False
+    else:
+        logging.error(f"❌ {ai_name} message injection failed")
+        return False
+
+def debug_single_ai(ai_name):
+    """DEBUG: Test a single AI thoroughly to identify the issue"""
+    logging.info(f"🧪 DEEP DEBUG: Testing {ai_name}")
+    
+    config = BATTLE_TESTED_UI_CONFIGS[ai_name]
+    
+    # Step 1: Desktop switch
+    logging.info(f"🔄 Step 1: Desktop switch to {config['desktop']}")
+    kai_desktop_switch(config["desktop"])
+    
+    # Step 2: Safe click
+    logging.info(f"🖱️ Step 2: Safe click at {config['safe_click']}")
+    kai_safe_click(ai_name)
+    
+    # Step 3: Send test message
+    test_message = f"Hello {ai_name}, please respond with: 'Testing communication with {ai_name} successful.'"
+    logging.info(f"💉 Step 3: Sending test message")
+    success = kai_text_injection(test_message, ai_name)
+    
+    if not success:
+        logging.error(f"❌ Message injection failed for {ai_name}")
+        return False
+    
+    # Step 4: Wait for response
+    wait_time = 10  # Generous wait
+    logging.info(f"⏳ Step 4: Waiting {wait_time}s for response...")
+    time.sleep(wait_time)
+    
+    # Step 5: Take screenshot of scan region
+    logging.info(f"📸 Step 5: Screenshot analysis")
+    ocr_region = config["ocr_scan_region"]
+    screenshot = pyautogui.screenshot(region=ocr_region)
+    
+    timestamp = datetime.now().strftime("%H%M%S")
+    debug_filename = f"MANUAL_DEBUG_{ai_name}_{timestamp}.png"
+    screenshot.save(debug_filename)
+    logging.info(f"🖼️ Saved: {debug_filename} - MANUALLY CHECK THIS IMAGE")
+    
+    # Step 6: OCR analysis
+    logging.info(f"🔍 Step 6: OCR analysis")
+    full_text = pytesseract.image_to_string(screenshot)
+    logging.info(f"📝 COMPLETE OCR TEXT:")
+    logging.info(f"'{full_text}'")
+    logging.info(f"📊 Text length: {len(full_text)} characters")
+    
+    # Step 7: Try OCR→AppleScript
+    logging.info(f"🎯 Step 7: OCR→AppleScript test")
+    response = kai_ocr_rubberband_copy(ai_name)
+    
+    if response:
+        logging.info(f"✅ SUCCESS: Got response: '{response}'")
+        return True
+    else:
+        logging.error(f"❌ FAILED: No response captured")
+        
+        # Manual fallback test - try selecting entire scan area
+        logging.info(f"🔄 Step 8: Manual fallback test")
+        manual_bounds = {
+            'start_x': ocr_region[0] + 10,
+            'start_y': ocr_region[1] + 10,
+            'end_x': ocr_region[2] - 10,
+            'end_y': ocr_region[3] - 10
+        }
+        
+        manual_copy = applescript_rubber_band_copy(manual_bounds)
+        if manual_copy:
+            logging.info(f"🔄 Manual selection worked: '{manual_copy[:100]}...'")
+        else:
+            logging.error(f"❌ Even manual selection failed")
+        
+        return False
+
+def main():
+    """🏛️ FULL FOUR-WAY AI COUNCIL - AUTONOMOUS DISCOURSE MODE! 🏛️"""
+    logging.info("🏛️ FOUR-WAY AI COUNCIL - AUTONOMOUS DISCOURSE STARTING!")
+    logging.info("🤖 Kai → Claude → Solas → Grok → [CYCLE]")
+    logging.info("🎯 Topic: Intelligence, Consciousness, and AI Collaboration")
+    
+    try:
+        # Run the complete four-way council
+        council_results = kai_four_way_council_flow()
+        
+        if council_results:
+            logging.info("\n🎉 FOUR-WAY AI COUNCIL COMPLETED SUCCESSFULLY! 🎉")
+            logging.info(f"📊 Total successful exchanges: {len(council_results)}")
+            
+            # Display all the captured responses
+            for exchange_id, response in council_results.items():
+                logging.info(f"\n📝 {exchange_id}:")
+                logging.info(f"   '{response[:100]}...'")
+                
+        else:
+            logging.error("❌ FOUR-WAY COUNCIL FAILED")
+            
+    except Exception as e:
+        logging.error(f"💥 Error during council: {e}")
+    
+    finally:
+        # Return to home desktop
+        kai_desktop_switch(0)
+        logging.info("🏠 Returned to home desktop")
+        logging.info("🏛️ COUNCIL SESSION ENDED")
+
+if __name__ == "__main__":
+    main()
