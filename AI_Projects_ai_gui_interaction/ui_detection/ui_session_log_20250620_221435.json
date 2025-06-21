@@ -1,0 +1,21 @@
+[
+  {
+    "timestamp": "2025-06-20T22:14:35.131648",
+    "window_info": {
+      "app_name": "Terminal",
+      "x": 1522,
+      "y": 657,
+      "width": 570,
+      "height": 371,
+      "timestamp": "2025-06-20T22:14:31.685655"
+    },
+    "profile_used": "browser_chat",
+    "input_coordinates": [
+      1807,
+      990
+    ],
+    "existing_content": "Last login: Fri Jun 20 22:09:59 on ttys013\njonstiles@Jon-Stiless-iMac ~ % cd /Users/jonstiles/Desktop/ui\\ detection/      \njonstiles@Jon-Stiless-iMac ui detection % python3 /Users/jonstiles/Desktop/ui\\ detection/production_ui_system.py\n\ud83d\ude80 Production UI Automation System Demo\n==================================================\n\n\ud83d\udccb Test 1: Window Detection\n\u2705 Active window: Terminal\n   Size: 570x371\n   Position: (1522, 657)\n   Profile: browser_chat\n   Input coordinates: (1807, 990)\n\n\ud83d\udccb Test 2: Content Capture\nSwitch to your chat app and put some text in the input field. Press Enter when ready...\n\u2705 Captured content: 'Last login: Fri Jun 20 22:09:59 on ttys013\njonstiles@Jon-Stiless-iMac ~ % cd /Users/jonstiles/Desktop/ui\\ detection/      \njonstiles@Jon-Stiless-iMac ui detection % python3 /Users/jonstiles/Desktop/ui\\ detection/production_ui_system.py\n\ud83d\ude80 Production UI Automation System Demo\n==================================================\n\n\ud83d\udccb Test 1: Window Detection\n\u2705 Active window: Terminal\n   Size: 570x371\n   Position: (1522, 657)\n   Profile: browser_chat\n   Input coordinates: (1807, 990)\n\n\ud83d\udccb Test 2: Content Capture\nSwitch to your chat app and put some text in the input field. Press Enter when ready...'\n\n\ud83d\udccb Test 3: Message Sending\nSend test message 'Hello from the Production UI System! \ud83d\ude80'? (y/n): y\n[22:14:31] INFO: Targeting Terminal using browser_chat profile\n[22:14:31] INFO: Input coordinates: (1807, 990)",
+    "message_sent": "Hello from the Production UI System! \ud83d\ude80",
+    "success": true
+  }
+]

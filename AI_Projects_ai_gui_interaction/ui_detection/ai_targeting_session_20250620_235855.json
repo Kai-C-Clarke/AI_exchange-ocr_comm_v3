@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2025-06-20T23:58:29.316351",
+    "action": "message_sent",
+    "target": "kai",
+    "message": "Does Jon exist?",
+    "coordinates": [
+      456,
+      960
+    ],
+    "desktop": 1
+  },
+  {
+    "timestamp": "2025-06-20T23:58:35.449648",
+    "action": "message_sent",
+    "target": "claude",
+    "message": "Does Jon exist?",
+    "coordinates": [
+      1200,
+      960
+    ],
+    "desktop": 1
+  },
+  {
+    "timestamp": "2025-06-20T23:58:43.539533",
+    "action": "message_sent",
+    "target": "perplexity",
+    "message": "Does Jon exist?",
+    "coordinates": [
+      456,
+      960
+    ],
+    "desktop": 2
+  },
+  {
+    "timestamp": "2025-06-20T23:58:49.697910",
+    "action": "message_sent",
+    "target": "grok",
+    "message": "Does Jon exist?",
+    "coordinates": [
+      1200,
+      960
+    ],
+    "desktop": 2
+  }
+]

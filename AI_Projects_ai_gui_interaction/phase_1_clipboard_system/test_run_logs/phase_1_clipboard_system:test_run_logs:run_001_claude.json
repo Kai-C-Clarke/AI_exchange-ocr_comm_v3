@@ -1,0 +1,15 @@
+{
+  "run_id": "001",
+  "date": "2025-06-20",
+  "target": "chatgpt_web",
+  "method": "fallback_input_capture",
+  "input_keyword": "Ask anything",
+  "clicked_coords": [1024, 1071],
+  "clipboard_length": 2100,
+  "checks": {
+    "not_empty": true,
+    "contains_text": true,
+    "reasonable_length": true
+  },
+  "status": "success"
+}

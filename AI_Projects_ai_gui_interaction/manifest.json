@@ -1,0 +1,18 @@
+{
+  "project": "AI GUI Interaction",
+  "version": "0.1-beta",
+  "created_by": "Jon Richard Stiles + Kai + Claude",
+  "phases": {
+    "phase_1": {
+      "description": "OCR-assisted UI targeting and clipboard capture",
+      "status": "in_progress",
+      "last_run": "2025-06-20",
+      "test_targets": ["claude_web", "chatgpt_web", "whatsapp_web"]
+    }
+  },
+  "logs": {
+    "total_runs": 0,
+    "successful_captures": 0,
+    "failures": 0
+  }
+}

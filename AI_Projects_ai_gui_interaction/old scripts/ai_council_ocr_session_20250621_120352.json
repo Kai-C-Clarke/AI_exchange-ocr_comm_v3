@@ -1,0 +1,15 @@
+[
+  {
+    "timestamp": "2025-06-21T12:02:26",
+    "ai": "kai",
+    "message": "OCR test for kai: Please respond with a few sentences so we can test the OCR response capture system.",
+    "method": "applescript",
+    "coordinates": [
+      456,
+      960
+    ],
+    "desktop": 1,
+    "status": "sent",
+    "ocr_response": "he OCR response capture system."
+  }
+]

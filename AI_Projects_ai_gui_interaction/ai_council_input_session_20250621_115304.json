@@ -1,0 +1,125 @@
+{
+  "session_id": "20250621_115304",
+  "timestamp": "2025-06-21T11:53:04.453239",
+  "ai_council_config": {
+    "kai": {
+      "name": "Kai",
+      "desktop": 1,
+      "position": "left",
+      "input_coords": [
+        456,
+        960
+      ],
+      "typing_method": "applescript",
+      "status": "\u2705 Proven working"
+    },
+    "claude": {
+      "name": "Claude",
+      "desktop": 1,
+      "position": "right",
+      "input_coords": [
+        1200,
+        960
+      ],
+      "typing_method": "applescript",
+      "status": "\u2705 Proven working"
+    },
+    "perplexity": {
+      "name": "Perplexity",
+      "desktop": 2,
+      "position": "left",
+      "input_coords": [
+        456,
+        960
+      ],
+      "typing_method": "applescript",
+      "status": "\u2705 Proven working"
+    },
+    "grok": {
+      "name": "Grok",
+      "desktop": 2,
+      "position": "right",
+      "input_coords": [
+        1548,
+        1000
+      ],
+      "typing_method": "clipboard",
+      "status": "\u2705 Proven working (Kai's solution)"
+    }
+  },
+  "session_log": [
+    {
+      "timestamp": "2025-06-21T11:51:56.886532",
+      "ai": "kai",
+      "message": "Test message for Kai from AI Council Input System. Please respond with a brief acknowledgment.",
+      "method": "applescript",
+      "coordinates": [
+        456,
+        960
+      ],
+      "desktop": 1,
+      "status": "sent",
+      "ocr_response": null
+    },
+    {
+      "timestamp": "2025-06-21T11:52:22.196939",
+      "ai": "kai",
+      "message": "Sequential test from AI Council Input System. This message is being sent to all council members to verify communication channels.",
+      "method": "applescript",
+      "coordinates": [
+        456,
+        960
+      ],
+      "desktop": 1,
+      "status": "sent",
+      "ocr_response": null
+    },
+    {
+      "timestamp": "2025-06-21T11:52:30.202976",
+      "ai": "claude",
+      "message": "Sequential test from AI Council Input System. This message is being sent to all council members to verify communication channels.",
+      "method": "applescript",
+      "coordinates": [
+        1200,
+        960
+      ],
+      "desktop": 1,
+      "status": "sent",
+      "ocr_response": "to all council members to verify communication channels.\n\nwaiting next in sequence."
+    },
+    {
+      "timestamp": "2025-06-21T11:52:44.485566",
+      "ai": "perplexity",
+      "message": "Sequential test from AI Council Input System. This message is being sent to all council members to verify communication channels.",
+      "method": "applescript",
+      "coordinates": [
+        456,
+        960
+      ],
+      "desktop": 2,
+      "status": "sent",
+      "ocr_response": null
+    },
+    {
+      "timestamp": "2025-06-21T11:52:52.679293",
+      "ai": "grok",
+      "message": "Sequential test from AI Council Input System. This message is being sent to all council members to verify communication channels.",
+      "method": "clipboard",
+      "coordinates": [
+        1548,
+        1000
+      ],
+      "desktop": 2,
+      "status": "sent",
+      "ocr_response": null
+    }
+  ],
+  "summary": {
+    "total_messages": 5,
+    "ais_messaged": 4,
+    "methods_used": [
+      "applescript",
+      "clipboard"
+    ]
+  }
+}

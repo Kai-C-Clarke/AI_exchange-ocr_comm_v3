@@ -1,0 +1,51 @@
+{
+  "session_id": "20250621_001642",
+  "timestamp": "2025-06-21T00:16:42.192646",
+  "ai_targets": {
+    "kai": {
+      "desktop": 1,
+      "input_coords": [
+        456,
+        960
+      ],
+      "response_coords": [
+        456,
+        600
+      ]
+    },
+    "claude": {
+      "desktop": 1,
+      "input_coords": [
+        1200,
+        960
+      ],
+      "response_coords": [
+        1200,
+        600
+      ]
+    },
+    "perplexity": {
+      "desktop": 2,
+      "input_coords": [
+        456,
+        960
+      ],
+      "response_coords": [
+        456,
+        600
+      ]
+    },
+    "grok": {
+      "desktop": 2,
+      "input_coords": [
+        1548,
+        988
+      ],
+      "response_coords": [
+        1548,
+        600
+      ]
+    }
+  },
+  "conversation_log": []
+}
